@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Timers;
+using Discord;
 using Newtonsoft.Json;
+using SmashOrPass.Log;
 
 namespace SmashOrPass.Data
 {
@@ -17,11 +17,11 @@ namespace SmashOrPass.Data
         public static void Init()
         {
             currentDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\SoPDB.json";
-            Console.WriteLine("[Info][SmashDB] DB save path: " + currentDir);
+            Logger.Log("DB save path: " + currentDir, "SmashDB", LogSeverity.Info);
 
             if (File.Exists(currentDir))
             {
-                Console.WriteLine("[Info][SmashDB] Restoring data from db file");
+                Logger.Log("Restoring data from db file", "SmashDB", LogSeverity.Info);
                 Data = JsonConvert.DeserializeObject<Dictionary<ulong, UserEntry>>(
                     File.ReadAllText(currentDir));
             }
@@ -33,7 +33,7 @@ namespace SmashOrPass.Data
 
             timer.Elapsed += SaveToFile;
             timer.Start();
-            Console.WriteLine("[Info][SmashDB] Initialized");
+            Logger.Log("Initialized", "SmashDB", LogSeverity.Info);
         }
 
         public static void AddEntry(UserEntry entry)
@@ -47,7 +47,7 @@ namespace SmashOrPass.Data
                 Data.Add(entry.Id, entry);
             }
 
-            Console.WriteLine($"[Info][SmashDB] Added user {entry.Id}");
+            Logger.Log($"Added user {entry.Id}", "SmashDB", LogSeverity.Info);
         }
 
         public static UserEntry GetEntry(ulong id)
@@ -63,7 +63,7 @@ namespace SmashOrPass.Data
         public static void UpdateEntry(UserEntry entry)
         {
             Data[entry.Id] = entry;
-            Console.WriteLine($"[Info][SmashDB] Updated user: {entry.Id} (S: {entry.Smashes}, P: {entry.Passes})");
+            Logger.Log($"Updated user: {entry.Id} (S: {entry.Smashes}, P: {entry.Passes})", "SmashDB", LogSeverity.Info);
         }
 
         public static void RemoveEntry(ulong id)
@@ -83,7 +83,7 @@ namespace SmashOrPass.Data
                 if (json != File.ReadAllText(currentDir))
                 {
                     File.WriteAllText(currentDir, json);
-                    Console.WriteLine("[Info][SmashDB] Saved db");
+                    Logger.Log("Saved db", "SmashDB", LogSeverity.Info);
                 }
             }
         }

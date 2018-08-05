@@ -8,14 +8,15 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using SmashOrPass.Log;
 
 namespace SmashOrPass
 {
     public class Bot
     {
-        private DiscordSocketClient _client;
-        private CommandService _commands;
-        private IServiceProvider _services;
+        private readonly DiscordSocketClient _client;
+        private readonly CommandService _commands;
+        private readonly IServiceProvider _services;
 
         public string Token { get; private set; }
         public string MessagePrefix { get; set; } = "!";
@@ -51,26 +52,24 @@ namespace SmashOrPass
 
         private async Task OnMessageReceived(SocketMessage socketMessage)
         {
-            var message = socketMessage as SocketUserMessage;
-
-            if (message == null || message.Author.IsBot) return;
+            if (!(socketMessage is SocketUserMessage message) || message.Author.IsBot) return;
 
             int commandStartPoint = -1;
             if (message.HasStringPrefix(MessagePrefix, ref commandStartPoint) || message.HasMentionPrefix(_client.CurrentUser, ref commandStartPoint))
             {
-                Console.WriteLine($"[Info][MsgRecv] Msg: {message.Content}");
+                Logger.Log($"Msg: {message.Content}", "MsgRecv", LogSeverity.Info);
 
                 var context = new SocketCommandContext(_client, message);
                 var result = await _commands.ExecuteAsync(context, commandStartPoint, _services);
 
                 if(!result.IsSuccess)
-                    Console.WriteLine($"[Error][MsgRecv] Result: {result.Error}");
+                    Logger.Log($"Result: {result.Error}", "MsgRecv", LogSeverity.Error);
             }
         }
 
         private Task Log(LogMessage msg)
         {
-            Console.WriteLine($"[{msg.Severity}] {msg.Message}");
+            Logger.Log(new Message(){Level = msg.Severity, Origin = msg.Source, Text = msg.Message});
             return Task.CompletedTask;
         }
     }

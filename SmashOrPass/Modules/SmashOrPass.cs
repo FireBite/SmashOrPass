@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using SmashOrPass.Data;
+using SmashOrPass.Log;
 
 namespace SmashOrPass.Modules
 {
@@ -24,7 +25,7 @@ namespace SmashOrPass.Modules
                 }
                 else
                 {
-                    Console.WriteLine($"[Error][StartSoP] No photo attached!");
+                    Logger.Log("No photo attached!", "StartSoP", LogSeverity.Error);
                     await Context.Channel.SendMessageAsync("Send me your photo to start!");
                     return;
                 }
@@ -32,22 +33,22 @@ namespace SmashOrPass.Modules
 
             if (!IsImage(url))
             {
-                Console.WriteLine($"[Error][StartSoP] {MimeTypes.GetMimeType(url)} is not a photo!");
+                Logger.Log($"{MimeTypes.GetMimeType(url)} is not a photo!", "StartSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync("Send me your photo to start!");
                 return;
             }
 
             var embed = new EmbedBuilder();
             embed.WithTitle("Smash Or Pass");
-            embed.WithDescription($"{Context.User.Username} has started Smash Or Pass!"); //
+            embed.WithDescription($"{Context.User.Username} has started Smash Or Pass!");
             embed.AddInlineField($"!smash @{Context.User.Username}", "Vote to smash");
             embed.AddInlineField($"!pass @{Context.User.Username}", "Vote to pass");
             embed.WithImageUrl(url);
-            embed.WithColor(new Color(255, 22, 148));
+            embed.WithColor(new Color(104, 44, 191));
 
             await Context.Channel.SendMessageAsync("", false, embed);
 
-            Console.WriteLine($"[Success][StartSoP] Starting SoP on user {Context.User.Username}");
+            Logger.Log($"Starting SoP on user {Context.User.Username}", "StartSoP", LogSeverity.Info);
             SmashDatabase.AddEntry(new UserEntry(){Id = Context.User.Id, Url = url, Name = Context.User.Username});
         }
 
@@ -56,17 +57,17 @@ namespace SmashOrPass.Modules
         {
             if (string.IsNullOrEmpty(target))
             {
-                Console.WriteLine($"[Error][PassSoP] No user specified");
+                Logger.Log("No user specified", "PassSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync("Tell me who you want to pass by writing !pass {@user}");
                 return;
             }
 
-            ulong id = Convert.ToUInt64(target.Substring(2, target.Length - 3));
+            ulong id = Convert.ToUInt64(target.Substring(2, target.Length - 3).Replace("!", string.Empty));
             UserEntry entry = null;
 
             if (!SmashDatabase.HasUser(id))
             {
-                Console.WriteLine($"[Error][PassSoP] User not in database!");
+                Logger.Log("User not in database!", "PassSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync("This user did not start his Smash Or Pass!");
                 return;
             }
@@ -75,7 +76,7 @@ namespace SmashOrPass.Modules
 
             if (entry.RatedBy.Contains(Context.User.Id))
             {
-                Console.WriteLine($"[Error][PassSoP] User has already voted!");
+                Logger.Log("User has already voted!", "PassSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync($"You have already rated {entry.Name}. To see current results write: !score @{entry.Name}");
                 return;
             }
@@ -90,11 +91,11 @@ namespace SmashOrPass.Modules
             embed.AddInlineField(entry.Smashes.ToString(), "Total Smashes");
             embed.AddInlineField(entry.Passes.ToString(), "Total Passes");
             embed.WithImageUrl(entry.Url);
-            embed.WithColor(new Color(255, 22, 148));
+            embed.WithColor(new Color(12, 212, 00));
 
             await Context.Channel.SendMessageAsync("", false, embed);
 
-            Console.WriteLine($"[Success][PassSoP] User {Context.User.Username} passed {entry.Name}");
+            Logger.Log($"User {Context.User.Username} passed {entry.Name}", "PassSoP", LogSeverity.Info);
         }
 
         [Command("smash")]
@@ -102,17 +103,17 @@ namespace SmashOrPass.Modules
         {
             if (string.IsNullOrEmpty(target))
             {
-                Console.WriteLine($"[Error][PassSoP] No user specified");
+                Logger.Log("No user specified", "SmashSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync("Tell me who you want to smash by writing !smash {@user}");
                 return;
             }
 
-            ulong id = Convert.ToUInt64(target.Substring(2, target.Length - 3));
+            ulong id = Convert.ToUInt64(target.Substring(2, target.Length - 3).Replace("!", string.Empty));
             UserEntry entry = null;
 
             if (!SmashDatabase.HasUser(id))
             {
-                Console.WriteLine($"[Error][PassSoP] User not in database!");
+                Logger.Log("User not in database!", "SmashSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync("This user did not start his Smash Or Pass!");
                 return;
             }
@@ -121,7 +122,7 @@ namespace SmashOrPass.Modules
 
             if (entry.RatedBy.Contains(Context.User.Id))
             {
-                Console.WriteLine($"[Error][PassSoP] User has already voted!");
+                Logger.Log("User has already voted!", "SmashSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync($"You have already rated {entry.Name}. To see current results write: !score @{entry.Name}");
                 return;
             }
@@ -132,15 +133,15 @@ namespace SmashOrPass.Modules
 
             var embed = new EmbedBuilder();
             embed.WithTitle("Smash Or Pass");
-            embed.WithDescription($"{Context.User.Username} smashed {entry.Name}!");
+            embed.WithDescription($"{entry.Name} smashed {entry.Name}!");
             embed.AddInlineField(entry.Smashes.ToString(), "Total Smashes");
             embed.AddInlineField(entry.Passes.ToString(), "Total Passes");
             embed.WithImageUrl(entry.Url);
-            embed.WithColor(new Color(255, 22, 148));
+            embed.WithColor(new Color(0, 165, 249));
 
             await Context.Channel.SendMessageAsync("", false, embed);
 
-            Console.WriteLine($"[Success][PassSoP] User {Context.User.Username} smashed {entry.Name}");
+            Logger.Log($"User {Context.User.Username} smashed {entry.Name}", "SmashSoP", LogSeverity.Info);
         }
 
         [Command("score")]
@@ -148,7 +149,7 @@ namespace SmashOrPass.Modules
         {
             if (string.IsNullOrEmpty(target))
             {
-                Console.WriteLine($"[Error][Info] No user specified");
+                Logger.Log("No user specified", "ScoreSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync("Tell me whose score you want to see by writing !score {@user}");
                 return;
             }
@@ -158,7 +159,7 @@ namespace SmashOrPass.Modules
 
             if (!SmashDatabase.HasUser(id))
             {
-                Console.WriteLine($"[Error][Info] User not in database!");
+                Logger.Log("User not in database!", "ScoreSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync("This user did not start his Smash Or Pass!");
                 return;
             }
@@ -167,15 +168,32 @@ namespace SmashOrPass.Modules
 
             var embed = new EmbedBuilder();
             embed.WithTitle("Smash Or Pass");
-            embed.WithDescription($"{Context.User.Username} score");
+            embed.WithDescription($"{entry.Name} score");
             embed.AddInlineField(entry.Smashes.ToString(), "Smashes");
             embed.AddInlineField(entry.Passes.ToString(), "Passes");
             embed.WithImageUrl(entry.Url);
-            embed.WithColor(new Color(255, 22, 148));
+            embed.WithColor(new Color(104, 44, 191));
 
             await Context.Channel.SendMessageAsync("", false, embed);
 
-            Console.WriteLine($"[Success][ScoreSoP] {entry.Name} ");
+            Logger.Log($"Show {entry.Name} score", "ScoreSoP", LogSeverity.Info);
+        }
+
+        [Command("listall")]
+        public async Task ListAll()
+        {
+            var embed = new EmbedBuilder();
+            embed.WithTitle("Smash Or Pass");
+            embed.WithDescription("All scores");
+            foreach (var entry in SmashDatabase.Data)
+            {
+                embed.AddField(entry.Value.Name, $"S:   {entry.Value.Smashes}\nP:   {entry.Value.Passes}");
+            }
+            embed.WithColor(new Color(104, 44, 191));
+
+            await Context.Channel.SendMessageAsync("", false, embed);
+
+            Logger.Log("Listed all SoPs", "ListSoP", LogSeverity.Info);
         }
 
         [Command("stop")]
@@ -186,7 +204,7 @@ namespace SmashOrPass.Modules
 
             if (!SmashDatabase.HasUser(id))
             {
-                Console.WriteLine($"[Error][PassSoP] User not in database!");
+                Logger.Log("User not in database!", "StopSoP", LogSeverity.Error);
                 await Context.Channel.SendMessageAsync("You can't end something, that didn't start!");
                 return;
             }
@@ -206,11 +224,43 @@ namespace SmashOrPass.Modules
             embed.AddInlineField(entry.Passes.ToString(), "Passes");
             embed.AddField(CommentScore(score, entry.Name, score < 50 ? "passed" : "smashed"), $"({score}%)");
             embed.WithImageUrl(entry.Url);
-            embed.WithColor(new Color(255, 22, 148));
+            embed.WithColor(score > 50 ? new Color(0, 165, 249) : new Color(212, 12, 00));
 
             await Context.Channel.SendMessageAsync("", false, embed);
 
             SmashDatabase.RemoveEntry(entry.Id);
+            Logger.Log($"Ending SoP on user {entry.Name}", "EndSoP", LogSeverity.Info);
+        }
+
+        [Command("confirmstop")]
+        public async Task ConfirmStop(ulong id)
+        {
+            UserEntry entry = SmashDatabase.GetEntry(id);
+            short score = 0;
+
+            if (!entry.RatedBy.Contains(0))
+            {
+                Logger.Log("User not marked!", "ConfirmStopSoP", LogSeverity.Error);
+            }
+
+            if (entry.Smashes != 0)
+            {
+                score = (short)Math.Round(entry.Smashes / (decimal)(entry.Smashes + entry.Passes) * 100, 0, MidpointRounding.AwayFromZero);
+            }
+
+            var embed = new EmbedBuilder();
+            embed.WithTitle("Smash Or Pass");
+            embed.WithDescription($"{entry.Name} ends his game!");
+            embed.AddInlineField(entry.Smashes.ToString(), "Smashes");
+            embed.AddInlineField(entry.Passes.ToString(), "Passes");
+            embed.AddField(CommentScore(score, entry.Name, score < 50 ? "passed" : "smashed"), $"({score}%)");
+            embed.WithImageUrl(entry.Url);
+            embed.WithColor(score > 50 ? new Color(0, 165, 249) : new Color(212, 12, 00));
+
+            await Context.Channel.SendMessageAsync("", false, embed);
+
+            SmashDatabase.RemoveEntry(entry.Id);
+            Logger.Log($"Ending SoP on user {entry.Name}", "ConfirmStopSoP", LogSeverity.Info);
         }
 
         [Command("help")]
@@ -223,7 +273,8 @@ namespace SmashOrPass.Modules
                                                    "!stop        Stops your SoP and displays the score\n" +
                                                    "!pass @usr   Passes selected user\n" +
                                                    "!smash @usr  Smashes selected user\n" +
-                                                   "!score @usr  Shows selected user score```");
+                                                   "!score @usr  Shows selected user score\n" +
+                                                   "!listall     Lists all currently running SoPs```");
         }
 
         private bool IsImage(string url)
